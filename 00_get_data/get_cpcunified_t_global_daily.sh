@@ -3,9 +3,9 @@
 #-----------------------------------------------------------------
 #----- user inputs -----------------------------------------------
 #-----------------------------------------------------------------
-data_dir="/c/Users/kerrie/Documents/02_LocalData/CPCunifiedCONUS_daily" # location to download to
-years=($(seq 1979 2024)) # dataset starts in 1948
 vars=( tmax tmin )
+years=($(seq 1979 2024)) # dataset starts in 1948
+# you also need to update the data_dir in the loop below
 #-----------------------------------------------------------------
 
 # echo "${years[@]}"
@@ -13,6 +13,8 @@ vars=( tmax tmin )
 # loop through downloads by year
 for var in "${vars[@]}"
 do
+    data_dir="/e/data/CPCunified/daily/$var/global/orig" # location to download to
+
     echo "getting $var files"
     for YYYY in "${years[@]}"
     do
@@ -30,4 +32,4 @@ done
 # acknowledgement info
 # CPC Global Unified Temperature data provided by the NOAA PSL, Boulder, Colorado, USA, from their website at https://psl.noaa.gov 
 
-# downloaded 2024 Sep 19
+# downloaded 2024 Sep 23

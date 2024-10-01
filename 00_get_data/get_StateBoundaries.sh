@@ -3,7 +3,8 @@
 #-----------------------------------------------------------------
 #----- user inputs -----------------------------------------------
 #-----------------------------------------------------------------
-data_dir="/c/Users/kerrie/Documents/02_LocalData/boundaries/orig" # location to download to
+# data_dir="/c/Users/kerrie/Documents/02_LocalData/boundaries/orig" # location to download to
+data_dir="/e/data/boundaries/orig" # location to download to
 filenames=( cb_2023_us_state_500k.zip cb_2023_us_state_5m.zip cb_2023_us_state_20m.zip )
 #-----------------------------------------------------------------
 

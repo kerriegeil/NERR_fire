@@ -3,17 +3,21 @@
 #-----------------------------------------------------------------
 #----- user inputs -----------------------------------------------
 #-----------------------------------------------------------------
-data_dir="/c/Users/kerrie/Documents/02_LocalData/CPCunifiedCONUS_daily" # location to download to
+# data_dir="/c/Users/kerrie/Documents/02_LocalData/CPCunifiedCONUS_daily" # location to download to
+# data_dir="/c/Users/kerrie/Documents/02_LocalData/CPCunified/daily/pr/conus/orig" # location to download to
+data_dir="/e/data/CPCunified/daily/pr/conus/orig" # location to download to
+static_dir="/e/data/CPCunified/static"
+mon_dir="/e/data/CPCunified/monthly/pr/conus/orig"
 years=($(seq 1950 2024)) # dataset starts in 1948
 #-----------------------------------------------------------------
 
 # echo "${years[@]}"
 
 # get land mask
-curl --create-dirs -O --output-dir $data_dir https://downloads.psl.noaa.gov/Datasets/cpc_us_precip/lsmask.nc
+curl --create-dirs -O --output-dir $static_dir https://downloads.psl.noaa.gov/Datasets/cpc_us_precip/lsmask.nc
 
 # get monthly precip
-curl --create-dirs -O --output-dir $data_dir https://downloads.psl.noaa.gov/Datasets/cpc_us_precip/precip.V1.0.mon.mean.nc
+curl --create-dirs -O --output-dir $mon_dir https://downloads.psl.noaa.gov/Datasets/cpc_us_precip/precip.V1.0.mon.mean.nc
 
 # loop through downloads by year
 for YYYY in "${years[@]}"
@@ -23,7 +27,7 @@ do
         curl --create-dirs -O --output-dir $data_dir https://downloads.psl.noaa.gov/Datasets/cpc_us_precip/precip.V1.0.$YYYY.nc
     else
         curl --create-dirs -O --output-dir $data_dir https://downloads.psl.noaa.gov/Datasets/cpc_us_precip/RT/precip.V1.0.$YYYY.nc
-    done
+    fi
 done
 
 # data landing page 

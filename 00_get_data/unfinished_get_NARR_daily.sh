@@ -4,21 +4,34 @@
 #----- user inputs -----------------------------------------------
 #-----------------------------------------------------------------
 # data_dir="/c/Users/kerrie/Documents/02_LocalData/nclimgrid_daily/orig"
-data_dir="/e/data/nclimgrid_daily/orig"
-years=($(seq 1951 2024)) # dataset starts in 1951
+data_dir_base="/e/data/NARR"
+years=($(seq 1979 2024)) # dataset starts in 1979
 months=($(seq -f "%02g" 1 12))
+narr_varnames=( acpcp 
 #-----------------------------------------------------------------
 
 # echo "${years[@]}"
 # echo "${months[@]}"
 
 # loop through downloads by year and month
-for YYYY in "${years[@]}"
-do
-    echo "getting files for $YYYY"
-    for MM in "${months[@]}"
+for var in "${narr_varnames[@]}"
+do 
+    echo "downloading $var files"
+    if $var=='acpcp'
+        data_dir=$data_dir_base/daily/prcp/orig
+    fi
+    if $var=='acpcp'
+        data_dir=$data_dir_base/daily/tmax/orig
+    fi
+    if $var=='acpcp'
+        data_dir=$data_dir_base/daily/tmin/orig
+    fi
+    
+    for YYYY in "${years[@]}"
     do
-        curl --create-dirs -O --output-dir $data_dir https://www.ncei.noaa.gov/data/nclimgrid-daily/access/grids/$YYYY/ncdd-$YYYY$MM-grd-scaled.nc
+        echo "getting files for $YYYY"
+        curl --create-dirs -O --output-dir $data_dir https://downloads.psl.noaa.gov/Datasets/NARR/Dailies/monolevel/$var.$YYYY.nc
+        
     done
 done
 
