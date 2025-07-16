@@ -121,15 +121,25 @@ def prompt_user_preferences(system_type, cpu_count, recommendations):
     else:
         nworkers = recommendations['suggested_workers']
     
+    # # Ask about chunks-per-worker target
+    # default_target = 3.0
+    # target_chunks_input = input(f"Target chunks per worker (default={default_target})").strip()
+    # try:
+    #     target_chunks_per_worker = float(target_chunks_input) if target_chunks_input else default_target
+    #     target_chunks_per_worker = max(2.0, min(target_chunks_per_worker, 2.95))  # Cap at just under 3
+    # except ValueError:
+    #     print("Invalid input. Using default target.")
+    #     target_chunks_per_worker = default_target
+
     # Ask about chunks-per-worker target
-    default_target = 2.8
-    target_chunks_input = input(f"Target chunks per worker (default={default_target}, max=2.95): ").strip()
+    default_target = 3.0
+    target_chunks_input = input(f"Target chunks per worker (default={default_target}): ").strip()
     try:
         target_chunks_per_worker = float(target_chunks_input) if target_chunks_input else default_target
-        target_chunks_per_worker = max(2.0, min(target_chunks_per_worker, 2.95))  # Cap at just under 3
+        target_chunks_per_worker = max(2.0, target_chunks_per_worker)  # Minimum of 2.0, no upper limit
     except ValueError:
         print("Invalid input. Using default target.")
-        target_chunks_per_worker = default_target
+        target_chunks_per_worker = default_target    
     
     # Ask about automatic chunk sizing
     auto_chunks = input("Try automatic chunk sizing? (y/n, default=y): ").lower().strip()
@@ -162,7 +172,7 @@ def prompt_user_preferences(system_type, cpu_count, recommendations):
 
 def auto_configure_processing(pr_file, tmax_file, year_start, year_end, 
                             interactive=True,
-                            target_chunks_per_worker=2.8):
+                            target_chunks_per_worker=3.0):
     """
     Automatically configure number of workers and chunk sizes based on system resources
     
@@ -238,7 +248,7 @@ def auto_configure_processing(pr_file, tmax_file, year_start, year_end,
         # Calculate target number of chunks based on workers
         # Target close to but less than 3 chunks per worker for optimal efficiency
         min_target_chunks = int(nworkers * 2.0)   # Minimum 2 chunks per worker
-        max_target_chunks = int(nworkers * 2.95)  # Cap at just under 3 per worker
+        max_target_chunks = int(nworkers * target_chunks_per_worker)  # Cap at 3 per worker
         target_total_chunks = int(nworkers * target_chunks_per_worker)
         
         # Clamp target to the valid range
@@ -316,7 +326,7 @@ def auto_configure_processing(pr_file, tmax_file, year_start, year_end,
                 
                 # Prefer configurations that stay within 2.0-2.95 chunks per worker
                 if (chunks_per_worker_with_size >= 2.0 and 
-                    chunks_per_worker_with_size <= 2.95 and
+                    chunks_per_worker_with_size <= target_chunks_per_worker and
                     lat_remainder_ok and lon_remainder_ok and
                     memory_ok):
                     # Prefer configurations closer to the target ratio
@@ -344,10 +354,10 @@ def auto_configure_processing(pr_file, tmax_file, year_start, year_end,
                     memory_per_chunk_test = (points_per_chunk_test * time_size * 4 * arrays_per_gridpoint_per_timestep) / (1024**3)
                     memory_ok = memory_per_chunk_test <= memory_per_worker_gb * 0.8
                     
-                    if chunks_per_worker_with_size <= 2.95 and memory_ok:
+                    if chunks_per_worker_with_size <= target_chunks_per_worker and memory_ok:
                         lat_chunk, lon_chunk = lat_size_test, lon_size_test
                         break
-                if chunks_per_worker_with_size <= 2.95 and memory_ok:
+                if chunks_per_worker_with_size <= target_chunks_per_worker and memory_ok:
                     break
         
         # Ensure we don't exceed data dimensions
@@ -362,7 +372,7 @@ def auto_configure_processing(pr_file, tmax_file, year_start, year_end,
         actual_total_chunks = actual_lat_chunks * actual_lon_chunks
         
         # If we still don't have a good configuration, try to get under 2.95 chunks per worker
-        if actual_total_chunks / nworkers > 2.95:            
+        if actual_total_chunks / nworkers > target_chunks_per_worker:            
             # Try progressively larger chunk sizes
             for lat_size_test in sorted([s for s in preferred_sizes if s > lat_chunk], reverse=True):
                 for lon_size_test in sorted([s for s in preferred_sizes if s > lon_chunk], reverse=True):
@@ -376,14 +386,14 @@ def auto_configure_processing(pr_file, tmax_file, year_start, year_end,
                     memory_per_chunk_test = (points_per_chunk_test * time_size * 4 * arrays_per_gridpoint_per_timestep) / (1024**3)
                     memory_ok = memory_per_chunk_test <= memory_per_worker_gb * 0.8
                     
-                    if test_chunks_per_worker <= 2.95 and test_chunks_per_worker >= 2.0 and memory_ok:
+                    if test_chunks_per_worker <= target_chunks_per_worker and test_chunks_per_worker >= 2.0 and memory_ok:
                         lat_chunk, lon_chunk = lat_size_test, lon_size_test
                         actual_lat_chunks = test_lat_chunks
                         actual_lon_chunks = test_lon_chunks
                         actual_total_chunks = test_total_chunks
                         print(f"   Found better configuration: {lat_chunk}×{lon_chunk} = {test_chunks_per_worker:.1f} chunks/worker")
                         break
-                if test_chunks_per_worker <= 2.95 and memory_ok:
+                if test_chunks_per_worker <= target_chunks_per_worker and memory_ok:
                     break
             
             chunks = {'time': -1, 'lat': lat_chunk, 'lon': lon_chunk}
@@ -408,7 +418,7 @@ def auto_configure_processing(pr_file, tmax_file, year_start, year_end,
     
     print(f"Chunk sizes: time={chunks['time']}, lat={lat_chunk}, lon={lon_chunk}")
     print(f"Spatial points per chunk: {points_per_chunk}")    
-    print(f"Target chunks per worker: {effective_target_ratio:.1f} (capped at <3.0)")
+    print(f"Target chunks per worker: {effective_target_ratio:.1f} (if CPU/RAM allows)")
     print(f"Chunks per worker: {chunks_per_worker:.1f}")
     print(f"Total chunks: {actual_total_chunks} ({actual_lat_chunks} × {actual_lon_chunks})")
     print(f"{'='*60}\n")
