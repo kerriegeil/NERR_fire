@@ -8,8 +8,6 @@ Description: Functions to calculate Keetch-Byram Drough Index
 import xarray as xr
 import numpy as np
 import pandas as pd
-import dask
-import dask.array as da
 
 # lazy read data and convert units, return xarray object backed with chunked dask arrays
 # can process subsets in all dimensions or subset only in time, but not subset in either lat or lon, need both or none
@@ -33,14 +31,8 @@ def get_tmax(tmax_file,chunks,year_start,year_end,lat1=None,lat2=None,lon1=None,
     else:
         tmax = xr.open_dataset(tmax_file).tmax.sel(time=slice(year_start, year_end)).chunk(chunks)
 
-    print(f"After chunking: {tmax.chunks}", flush=True)  # Debug line
-    print(f"Is dask array: {hasattr(tmax.data, 'chunks')}", flush=True)  # Debug line
-    
     # convert units
     tmax = ((tmax * 9 / 5) + 32).round(2).astype('float32')  # convert to Fahrenheit
-
-    print(f"After operations: {tmax.chunks}", flush=True)  # Debug line
-    print(f"Is still dask array: {hasattr(tmax.data, 'chunks')}", flush=True)  # Debug line    
     return tmax
 
 def get_chunk_info(var):
